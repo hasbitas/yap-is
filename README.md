@@ -8,7 +8,6 @@
 ```cmd
 git clone https://github.com/hasbitas/yapay_zeka_destekli_izin_zamanlay-c-_sistemi.git
 cd yapay_zeka_destekli_izin_zamanlay-c-_sistemi
-git checkout claude/integrate-hackathon-modules-JZGjY
 scripts\run_all.bat
 ```
 
@@ -16,7 +15,6 @@ scripts\run_all.bat
 ```bash
 git clone https://github.com/hasbitas/yapay_zeka_destekli_izin_zamanlay-c-_sistemi.git
 cd yapay_zeka_destekli_izin_zamanlay-c-_sistemi
-git checkout claude/integrate-hackathon-modules-JZGjY
 bash scripts/run_all.sh
 ```
 
