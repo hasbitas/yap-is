@@ -6,5 +6,5 @@ router = APIRouter()
 
 @router.get("/")
 def get_schedule():
-    """Mevcut nöbet/izin çizelgesini döner."""
+    """Return the sample duty schedule."""
     return {"status": "success", "data": schedule_db}

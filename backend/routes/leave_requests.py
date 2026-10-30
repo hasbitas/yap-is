@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.get("/")
 def get_pending_leave_requests():
-    """Onay bekleyen izin taleplerini döner."""
+    """Return leave requests awaiting approval."""
     pending = [r for r in leave_requests_db if r["status"] == "pending"]
     return {"status": "success", "data": pending}
 

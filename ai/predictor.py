@@ -1,10 +1,8 @@
 """
-ER (Acil Servis) hasta sayısı tahmin servisi — FastAPI.
+Optional standalone emergency-room patient-count prediction service.
 
-CatBoost modeli `data/catboost_er_model.cbm` mevcutsa onu kullanır.
-Yoksa, demoyu kırmamak için eğitim setinden türetilmiş ağırlıklarla
-çalışan deterministik bir HEURISTIC fallback predictor devreye girer
-(top feature importances: tavg, dayofweek, snow, prcp, holiday).
+Use data/catboost_er_model.cbm when available, otherwise a repeatable
+weather-based heuristic to keep the demo running.
 """
 from __future__ import annotations
 
@@ -35,27 +33,27 @@ def _try_load_model():
             m = CatBoostRegressor()
             m.load_model(MODEL_PATH)
             _model = m
-            print(f"[AI] CatBoost model yüklendi: {MODEL_PATH}")
+            print(f"[AI] CatBoost model loaded: {MODEL_PATH}")
         else:
-            print(f"[AI] Model bulunamadı ({MODEL_PATH}), heuristic fallback aktif.")
+            print(f"[AI] Model not found ({MODEL_PATH}), heuristic fallback active.")
     except Exception as e:
-        print(f"[AI] CatBoost yüklenemedi ({e}), heuristic fallback aktif.")
+        print(f"[AI] CatBoost could not be loaded ({e}), heuristic fallback active.")
 
 
 def _heuristic_predict(date: str, w: Dict) -> float:
     """
-    Feature importance'a göre deterministik tahmin.
-    Baseline ~330; soğukta + karda + hafta içi günlerde yükselir.
+    Repeatable feature-based estimate.
+    Baseline ~330; increases with cold, snow, and weekday demand.
     """
     d = datetime.strptime(date, "%Y-%m-%d")
     base = 330.0
-    # Sıcaklık etkisi: 0°C civarı zirve, +20°C civarı taban
+    # Temperature effect increases below 15 degrees Celsius.
     tavg = float(w.get("tavg", 15.0))
-    temp_effect = max(0.0, (15.0 - tavg)) * 8.5     # her -1°C → +8.5 vaka
-    # Kar / yağış
+    temp_effect = max(0.0, (15.0 - tavg)) * 8.5     # Each degree below 15 adds 8.5 patients.
+    # Snow and rain
     snow_effect = float(w.get("snow", 0.0)) * 6.0
     prcp_effect = float(w.get("prcp", 0.0)) * 3.0
-    # Hafta günü (Salı/Pzt tipik olarak en yoğun)
+    # Weekday demand (Tuesday/Monday get the largest multipliers)
     dow_mult = {0: 1.05, 1: 1.10, 2: 1.02, 3: 0.95, 4: 0.92, 5: 0.70, 6: 0.65}[d.weekday()]
     pred = (base + temp_effect + snow_effect + prcp_effect) * dow_mult
     return round(pred, 1)
@@ -96,9 +94,9 @@ def predict(body: PredictBody):
         try:
             import numpy as np
             d = datetime.strptime(body.date, "%Y-%m-%d")
-            # Eğitim feature sıralamasıyla birebir eşleşme garantisi olmadığı için
-            # model çıktısını alır, yine de heuristic ile harmanlarız.
-            # (Gerçek üretimde feature pipeline pickle'dan yüklenir.)
+            # The feature order may not match the training pipeline.
+            # Try the model; fall back to the heuristic if prediction fails.
+            # Production use would require a validated feature pipeline.
             x = np.array([[
                 w.get("tavg", 15), w.get("tmin", 10), w.get("tmax", 20),
                 w.get("prcp", 0), w.get("snow", 0), w.get("snow_day", 0),

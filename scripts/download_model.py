@@ -1,6 +1,6 @@
 """
-CatBoost modelini ve dataset'i Drive'dan data/ klasörüne indirir.
-(Hackathon ortamı dışında, Drive paylaşımları açıkken çalışır.)
+Download the CatBoost model and CSV files from Drive into data/.
+Requires accessible Drive shares; overwrites existing files.
 """
 import os, urllib.request
 
@@ -18,4 +18,4 @@ for name, fid in FILES.items():
     dst = os.path.join(OUT, name)
     print(f"⬇️  {name}")
     urllib.request.urlretrieve(url, dst)
-print("✅ Tamam.")
+print("✅ Done.")

@@ -1,14 +1,9 @@
 """
-AI Optimizasyon ve Predictive Healthcare endpoint'leri.
+AI prediction and leave-rescheduling routes.
 
-Akış:
-  1) Frontend  →  POST /api/ai/predict-and-reschedule {date, city}
-  2) Backend   →  weather servisinden hava durumunu çeker
-  3) Backend   →  AI servisine (ai/, port 9000) tahmin için POST atar
-  4) AI        →  CatBoost modelinden ER (acil servis) hasta sayısı tahmini döner
-  5) Backend   →  Tahmini baseline ile karşılaştırır; %artış > eşik ise
-                  ilgili tarihteki izinleri otomatik olarak Perşembe'ye taşır
-  6) Backend   →  Frontend'e tek bir bütünsel JSON payload döndürür
+Obtain simulated weather and call the in-process predictor. Compare demand
+with the baseline and move approved leave to next Thursday if at least 20%
+higher. Return leave updates and a seven-day forecast in one response.
 """
 from __future__ import annotations
 
@@ -24,8 +19,8 @@ from services.ai_predictor import predict as ai_predict_local
 
 router = APIRouter()
 
-BASELINE_PATIENTS = 330.0   # eğitim setindeki ortalamaya yakın
-SURGE_THRESHOLD = 0.20      # %20 ve üzeri artış → operasyonel müdahale
+BASELINE_PATIENTS = 330.0   # Demo reference patient count.
+SURGE_THRESHOLD = 0.20      # An increase of at least 20% triggers rescheduling.
 
 
 class PredictRequest(BaseModel):
@@ -34,7 +29,7 @@ class PredictRequest(BaseModel):
 
 
 def _shift_leaves_to(target_date: str, source_date: str) -> List[Dict[str, Any]]:
-    """Source tarihindeki onaylı izinleri target tarihine taşır."""
+    """Move approved leave records from the source date to the target date."""
     moved = []
     for req in leave_requests_db:
         if req["start_date"] == source_date and req["status"] == "approved":
@@ -53,7 +48,7 @@ CAPACITY = 1000.0
 
 
 def _classify(ratio: float) -> tuple[str, str]:
-    """Oranı yoğunluk etiketi + renk durumuna çevirir."""
+    """Convert a capacity ratio to a demand label and color."""
     if ratio >= 0.85:
         return "Çok Yüksek", "red"
     if ratio >= 0.65:
@@ -67,7 +62,7 @@ def _classify(ratio: float) -> tuple[str, str]:
 
 @router.post("/predict-and-reschedule")
 def predict_and_reschedule(payload: PredictRequest):
-    """Hackathon ana akışı — hava + AI + iş mantığı + 7 günlük forecast."""
+    """Run weather, prediction, leave rules, and the seven-day forecast."""
     weather = get_weather_forecast(payload.city, payload.date)
     ai_result = ai_predict_local(payload.date, weather)
 
@@ -98,19 +93,19 @@ def predict_and_reschedule(payload: PredictRequest):
     predicted = float(ai_result["predicted_er_patients"])
     surge_pct = round((predicted - BASELINE_PATIENTS) / BASELINE_PATIENTS * 100, 1)
 
-    # 3) İş mantığı: artış eşiği aşıldıysa izinleri taşı
+    # 3) Move leave records when the surge threshold is reached.
     moved_leaves: List[Dict[str, Any]] = []
     action_taken = "no_action"
     target_date = None
     if surge_pct >= SURGE_THRESHOLD * 100:
         src = datetime.strptime(payload.date, "%Y-%m-%d")
-        # Perşembe'ye ötele (haftanın 3. günü = weekday 3)
+        # Move to next Thursday (weekday index 3).
         delta = (3 - src.weekday()) % 7 or 7
         target_date = (src + timedelta(days=delta)).strftime("%Y-%m-%d")
         moved_leaves = _shift_leaves_to(target_date, payload.date)
         action_taken = "leaves_rescheduled" if moved_leaves else "no_leaves_to_move"
 
-    # 4) Frontend için bütünsel payload
+    # 4) Return one response for the frontend.
     return {
         "status": "success",
         "scenario_date": payload.date,
@@ -141,7 +136,7 @@ def predict_and_reschedule(payload: PredictRequest):
 
 @router.post("/optimize-schedule")
 def optimize_schedule():
-    """Geriye uyumluluk için bırakılan mock optimizer."""
+    """Mock optimizer retained for backward compatibility."""
     return {
         "status": "success",
         "message": "Mock optimizasyon tamamlandı.",

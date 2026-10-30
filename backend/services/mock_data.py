@@ -1,5 +1,5 @@
-# In-memory veritabanı simülasyonu
-# Hackathon demosu için zenginleştirilmiş mock veriler.
+# In-memory database simulation.
+# Sample records for the hackathon demo.
 
 personnel_db = [
     {"id": 1, "name": "Dr. Ayşe Yılmaz", "specialty": "Kardiyoloji", "total_hours": 42, "status": "available"},
@@ -21,7 +21,7 @@ leave_requests_db = [
      "reason": "İdari İzin", "status": "approved"},
 ]
 
-# Salı = 2026-05-19, Perşembe = 2026-05-21 (senaryo günleri)
+# Prepared dates: Tuesday 2026-05-19 and Thursday 2026-05-21.
 schedule_db = [
     {"id": 1001, "personnel_id": 1, "personnel_name": "Dr. Ayşe Yılmaz",
      "date": "2026-05-19", "shift": "08:00 - 16:00", "department": "Kardiyoloji Polikliniği"},

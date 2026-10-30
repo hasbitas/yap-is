@@ -6,5 +6,5 @@ router = APIRouter()
 
 @router.get("/")
 def get_personnel():
-    """Tüm personeli ve uygunluk/nöbet durumlarını listeler."""
+    """List staff and their availability or duty status."""
     return {"status": "success", "data": personnel_db}

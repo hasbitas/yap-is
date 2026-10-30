@@ -1,4 +1,6 @@
-"""Senaryoyu komut satırından tetikler — jüri demosu için yedek."""
+"""
+Trigger the prepared scenario from the command line as a presentation backup.
+"""
 import json, urllib.request
 
 req = urllib.request.Request(

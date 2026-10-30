@@ -1,8 +1,8 @@
 """
-ER tahmin servisi — in-process (HTTP/ayrı port yok).
+In-process ER patient-count prediction; no separate HTTP port.
 
-CatBoost modeli varsa kullanır; yoksa feature-importance türevli deterministik
-heuristic fallback'e düşer. Böylece sadece fastapi/uvicorn/pydantic ile çalışır.
+Use a compatible CatBoost model if available, otherwise a repeatable weather
+formula. The default demo needs only FastAPI, Uvicorn, and Pydantic.
 """
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def predict(date: str, weather: Dict) -> Dict:
             pred = float(_model.predict(x)[0])
             model_name = "catboost_er_model"
         except Exception:
-            pass  # heuristic'i koru
+            pass  # Keep the heuristic result.
 
     return {
         "predicted_er_patients": round(pred, 1),

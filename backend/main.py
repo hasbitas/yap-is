@@ -1,7 +1,7 @@
 import os
 import sys
 
-# backend/ klasörünü import path'ine ekle — script nereden çalıştırılırsa çalışsın
+# Add backend/ to the import path regardless of the working directory.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI
@@ -35,7 +35,7 @@ def api_root():
     return {"message": "YAP-İS API hazır. /docs adresine gidin."}
 
 
-# Frontend'i aynı origin'den serve et (CORS derdi kalmasın, demo tek komut açılsın)
+# Serve the frontend from the same origin for the single-process demo.
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
