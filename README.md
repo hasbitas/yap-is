@@ -188,3 +188,7 @@ There is no persistent database: server changes disappear on restart, and browse
 The frontend's two-leave weekly allowance is not enforced as a backend policy.
 The demo login is visible in JavaScript and the API has no authentication; do not use real patient or staff information.
 The fixed Thursday rule does not check staffing constraints or prove that a day is safe for leave.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
